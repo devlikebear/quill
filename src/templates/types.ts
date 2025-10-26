@@ -120,6 +120,7 @@ export interface TemplateContext {
       id: string;
       url: string;
       title: string;
+      description: string;
       level: number;
       parent?: string;
     }>;
@@ -160,6 +161,7 @@ export interface TemplateContext {
       }>;
     }>;
     links: string[];
+    level: number;
   }>;
 
   /** Features extracted from pages */
@@ -200,4 +202,49 @@ export interface RenderResult {
     filesGenerated: number;
     generatedAt: string;
   };
+}
+
+/**
+ * Type aliases for easier imports
+ */
+
+/** Sitemap structure */
+export type SitemapStructure = TemplateContext['sitemap'] & {
+  hierarchy?: Record<string, SitemapPage[]>;
+};
+
+/** Sitemap page */
+export interface SitemapPage {
+  id: string;
+  url: string;
+  title: string;
+  description: string;
+  level: number;
+}
+
+/** Navigation structure */
+export type NavigationStructure = TemplateContext['navigation'];
+
+/** Navigation item */
+export interface NavigationItem {
+  title: string;
+  url: string;
+  children?: Array<{ title: string; url: string }>;
+}
+
+/** Feature extracted from pages */
+export interface Feature {
+  id: string;
+  name: string;
+  description: string;
+  pages: string[];
+  elements: UIElementInfo[];
+  scenario?: string;
+}
+
+/** UI Element information */
+export interface UIElementInfo {
+  type: string;
+  text: string;
+  description: string;
 }

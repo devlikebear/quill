@@ -166,6 +166,8 @@ export interface UIElement {
   selector?: string;
   /** Element description */
   description?: string;
+  /** Accessibility label */
+  ariaLabel?: string;
 }
 
 /**
