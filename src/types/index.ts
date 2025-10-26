@@ -134,3 +134,91 @@ export interface AgentConfig {
   /** Plugin configurations */
   plugins?: string[];
 }
+
+/**
+ * Document structure for generated documentation
+ */
+export interface Document {
+  /** Document title */
+  title: string;
+  /** Document metadata */
+  metadata: DocumentMetadata;
+  /** Table of contents */
+  toc: TOC;
+  /** Document sections */
+  sections: Section[];
+}
+
+/**
+ * Document metadata
+ */
+export interface DocumentMetadata {
+  /** Generation timestamp */
+  generatedAt: string;
+  /** Base URL of the documented site */
+  baseUrl: string;
+  /** Total number of pages */
+  pageCount: number;
+  /** Documentation format */
+  format?: OutputFormat;
+  /** Generator version */
+  version?: string;
+}
+
+/**
+ * Table of contents
+ */
+export interface TOC {
+  /** TOC items */
+  items: TOCItem[];
+}
+
+/**
+ * Table of contents item
+ */
+export interface TOCItem {
+  /** Section title */
+  title: string;
+  /** Anchor link */
+  anchor: string;
+  /** Nesting depth */
+  depth: number;
+  /** Child items */
+  children?: TOCItem[];
+}
+
+/**
+ * Document section
+ */
+export interface Section {
+  /** Unique section ID */
+  id: string;
+  /** Section title */
+  title: string;
+  /** Page URL */
+  url: string;
+  /** Section description */
+  description?: string;
+  /** Screenshot path */
+  screenshot?: string;
+  /** UI elements in this section */
+  elements?: UIElement[];
+  /** Additional content */
+  content?: string;
+}
+
+/**
+ * Formatter options
+ */
+export interface FormatterOptions {
+  /** Include table of contents */
+  includeToc?: boolean;
+  /** Include screenshots */
+  includeScreenshots?: boolean;
+  /** Include UI elements */
+  includeElements?: boolean;
+  /** Custom template path */
+  templatePath?: string;
+  /** Additional formatting options */
+  custom?: Record<string, unknown>;
+}

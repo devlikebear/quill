@@ -2,9 +2,10 @@
  * Main Agent - Orchestrates the documentation generation workflow
  */
 
-import type { QuillConfig, AgentResult, PageInfo } from '../types/index.js';
+import type { QuillConfig, AgentResult, PageInfo, Document } from '../types/index.js';
 import { PlaywrightMCP } from '../mcp/playwright.js';
 import { WebCrawlerAgent } from './subagents/web-crawler.js';
+import { DocumentGenerator } from './subagents/document-generator.js';
 import { logger } from '../utils/logger.js';
 
 /**
@@ -14,12 +15,18 @@ export class MainAgent {
   private config: QuillConfig;
   private playwright: PlaywrightMCP;
   private crawler?: WebCrawlerAgent;
+  private documentGenerator?: DocumentGenerator;
 
   constructor(config: QuillConfig) {
     this.config = config;
     this.playwright = new PlaywrightMCP({
       headless: true,
       timeout: 30000,
+    });
+    this.documentGenerator = new DocumentGenerator({
+      title: `${new URL(config.url).hostname} Documentation`,
+      includeDescriptions: true,
+      includeElements: true,
     });
   }
 
@@ -78,5 +85,19 @@ export class MainAgent {
    */
   getPages(): PageInfo[] {
     return this.crawler?.getResults() ?? [];
+  }
+
+  /**
+   * Generate document from collected pages
+   */
+  generateDocument(pages: PageInfo[]): AgentResult<Document> {
+    if (!this.documentGenerator) {
+      return {
+        success: false,
+        error: 'Document generator not initialized',
+      };
+    }
+
+    return this.documentGenerator.generate(pages);
   }
 }
