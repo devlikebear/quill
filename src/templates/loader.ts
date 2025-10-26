@@ -29,7 +29,16 @@ export class TemplateLoader {
       ...options,
     };
     this.cache = new Map();
-    this.builtinTemplatesDir = join(__dirname, 'builtin');
+
+    // Use dist/templates/builtin for built version
+    // __dirname will be dist/templates (compiled) or dist/cli (bundled)
+    // We need to find the templates directory relative to the project root
+    const projectRoot = process.cwd();
+    const distTemplates = join(projectRoot, 'dist', 'templates', 'builtin');
+    const srcTemplates = join(projectRoot, 'src', 'templates', 'builtin');
+
+    // Use dist if it exists (built version), otherwise use src (dev mode)
+    this.builtinTemplatesDir = existsSync(distTemplates) ? distTemplates : srcTemplates;
   }
 
   /**
