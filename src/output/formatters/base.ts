@@ -9,12 +9,15 @@ import type { Document, FormatterOptions } from '../../types/index.js';
  */
 export interface Formatter {
   /**
-   * Format a document to string
+   * Format a document to string or Buffer
    * @param document - Document to format
    * @param options - Formatting options
-   * @returns Formatted document as string
+   * @returns Formatted document as string or Buffer
    */
-  format(document: Document, options?: FormatterOptions): string;
+  format(
+    document: Document,
+    options?: FormatterOptions
+  ): string | Buffer | Promise<string | Buffer>;
 
   /**
    * Get the file extension for this format
@@ -31,7 +34,10 @@ export interface Formatter {
  * Base formatter abstract class with common utilities
  */
 export abstract class BaseFormatter implements Formatter {
-  abstract format(document: Document, options?: FormatterOptions): string;
+  abstract format(
+    document: Document,
+    options?: FormatterOptions
+  ): string | Buffer | Promise<string | Buffer>;
   abstract getExtension(): string;
   abstract getMimeType(): string;
 

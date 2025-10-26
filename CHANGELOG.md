@@ -7,6 +7,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2024-10-26
+
+### Added
+
+- **DOCX Output Format**: Generate professional Word documents
+  - Full document structure with cover page and metadata
+  - Automatic table of contents generation
+  - Section formatting with headings and descriptions
+  - Screenshot image embedding
+  - UI elements as formatted tables
+  - Professional styling (fonts, colors, spacing)
+- **HTML Output Format**: Generate responsive web documents
+  - Single-file HTML with embedded CSS and JavaScript
+  - Fixed sidebar navigation with table of contents
+  - Responsive design (mobile, tablet, desktop)
+  - Smooth scrolling and active section highlighting
+  - Print-optimized styles for PDF export
+  - Dark theme-ready CSS variables
+- **Format Selection**: CLI now supports multiple output formats
+  - `--format markdown` for Markdown output (default)
+  - `--format docx` for Word document output
+  - `--format html` for HTML web document output
+  - Dynamic formatter loading based on selected format
+  - Automatic file extension handling
+
+### Changed
+
+- **BaseFormatter**: Updated to support Buffer output for binary formats
+  - `format()` method now returns `string | Buffer | Promise<string | Buffer>`
+  - Enables DOCX formatter to return binary Buffer
+  - Maintains backward compatibility with string-based formatters
+- **Generate Command**: Enhanced document generation workflow
+  - Format-based formatter selection (Markdown, DOCX, HTML)
+  - Dynamic import of formatters for better performance
+  - Unified save logic for both text and binary formats
+  - Improved output path handling with correct extensions
+
+### Dependencies
+
+- Added `docx@^9.5.1` for Word document generation
+
+### Technical Details
+
+- DOCX formatter uses `docx` library with async image embedding
+- HTML formatter generates self-contained single-file documents
+- CSS styling optimized for modern browsers and print media
+- JavaScript for smooth scroll and TOC highlighting
+- Image paths handled as relative references in HTML
+- Buffer handling for binary DOCX format
+
 ## [0.4.0] - 2024-10-26
 
 ### Added
@@ -152,7 +202,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Playwright for browser automation
 - Claude Agent SDK integration (planned)
 
-[Unreleased]: https://github.com/devlikebear/quill/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/devlikebear/quill/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/devlikebear/quill/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/devlikebear/quill/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/devlikebear/quill/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/devlikebear/quill/compare/v0.1.0...v0.2.0
