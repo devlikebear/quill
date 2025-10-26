@@ -152,9 +152,13 @@ export class MainAgent {
 - Use these tools to crawl the website`
       : '⚠️ No browser tools available';
 
+    const languageInfo = this.getLanguageInstruction();
+
     return `You are a web documentation expert. Crawl websites and extract page information.
 
 ${toolsInfo}
+
+${languageInfo}
 
 OUTPUT: Return ONLY a valid JSON array with this structure:
 [
@@ -201,6 +205,37 @@ STEPS:
 6. Return JSON array of ALL pages visited
 
 Start now. Return ONLY the JSON array.`;
+  }
+
+  /**
+   * Get language instruction for the agent
+   */
+  private getLanguageInstruction(): string {
+    const language = this.config.language ?? 'en';
+
+    const languageNames: Record<string, string> = {
+      en: 'English',
+      ko: 'Korean (한국어)',
+      ja: 'Japanese (日本語)',
+      zh: 'Chinese (中文)',
+      es: 'Spanish (Español)',
+      fr: 'French (Français)',
+      de: 'German (Deutsch)',
+      pt: 'Portuguese (Português)',
+      ru: 'Russian (Русский)',
+      it: 'Italian (Italiano)',
+    };
+
+    const languageName = languageNames[language] || 'English';
+
+    if (language === 'en') {
+      return 'LANGUAGE: Extract content in English.';
+    }
+
+    return `LANGUAGE: Extract content and write descriptions in ${languageName}.
+- Titles and descriptions should be in ${languageName}
+- Element descriptions should be in ${languageName}
+- Keep URLs and technical terms in their original form`;
   }
 
   /**

@@ -185,6 +185,36 @@ export async function generateCommand(options: GenerateOptions): Promise<void> {
 
     spinner.succeed(chalk.green('Files saved!'));
 
+    // Copy screenshots from Playwright MCP to output directory
+    spinner.start('Copying screenshots...');
+    try {
+      const fs = await import('fs/promises');
+      const playwrightScreenshotsDir = '.playwright-mcp/screenshots';
+      const outputScreenshotsDir = path.join(outputDir, 'screenshots');
+
+      // Create output screenshots directory
+      await fs.mkdir(outputScreenshotsDir, { recursive: true });
+
+      // Copy all PNG files from Playwright MCP screenshots
+      try {
+        const files = await fs.readdir(playwrightScreenshotsDir);
+        const pngFiles = files.filter((f) => f.endsWith('.png'));
+
+        for (const file of pngFiles) {
+          const srcPath = path.join(playwrightScreenshotsDir, file);
+          const destPath = path.join(outputScreenshotsDir, file);
+          await fs.copyFile(srcPath, destPath);
+        }
+
+        spinner.succeed(chalk.green(`Screenshots copied! (${pngFiles.length} files)`));
+      } catch (err) {
+        // If no screenshots directory exists, that's okay
+        spinner.info(chalk.yellow('No screenshots found to copy'));
+      }
+    } catch (error) {
+      spinner.warn(chalk.yellow('Failed to copy screenshots'));
+    }
+
     // Display results
     console.log(chalk.cyan(`\n✅ Documentation Generated:\n`));
     console.log(chalk.green(`  📄 ${config.format.toUpperCase()}: ${docPath}`));
