@@ -4,7 +4,6 @@
 
 import { BaseFormatter } from './base.js';
 import type { Document, FormatterOptions, Section, TOCItem, UIElement } from '../../types/index.js';
-import path from 'path';
 
 /**
  * Markdown formatter implementation
@@ -51,21 +50,16 @@ export class MarkdownFormatter extends BaseFormatter {
 
   /**
    * Escape Markdown special characters
+   * Only escape characters that actually break markdown rendering
    */
   protected escapeMarkdown(text: string): string {
     return text
-      .replace(/\\/g, '\\\\')
-      .replace(/\*/g, '\\*')
-      .replace(/\_/g, '\\_')
-      .replace(/\[/g, '\\[')
+      .replace(/\\/g, '\\\\')  // Backslash must be escaped
+      .replace(/\*/g, '\\*')   // Asterisk for italic/bold
+      .replace(/\_/g, '\\_')   // Underscore for italic/bold
+      .replace(/\[/g, '\\[')   // Square brackets for links
       .replace(/\]/g, '\\]')
-      .replace(/\(/g, '\\(')
-      .replace(/\)/g, '\\)')
-      .replace(/\#/g, '\\#')
-      .replace(/\+/g, '\\+')
-      .replace(/\-/g, '\\-')
-      .replace(/\./g, '\\.')
-      .replace(/\!/g, '\\!');
+      .replace(/`/g, '\\`');   // Backticks for code
   }
 
   /**
@@ -206,17 +200,5 @@ export class MarkdownFormatter extends BaseFormatter {
     }
 
     return parts.join('');
-  }
-
-  /**
-   * Convert absolute screenshot path to relative path
-   */
-  private toRelativeImagePath(absolutePath: string, documentPath: string): string {
-    try {
-      const documentDir = path.dirname(documentPath);
-      return path.relative(documentDir, absolutePath);
-    } catch {
-      return absolutePath;
-    }
   }
 }
