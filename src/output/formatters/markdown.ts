@@ -126,9 +126,8 @@ export class MarkdownFormatter extends BaseFormatter {
     // Section divider
     parts.push('---\n');
 
-    // Section title with anchor
-    const anchor = this.generateAnchor(section.title);
-    parts.push(`## ${this.escapeMarkdown(section.title)} {#${anchor}}\n`);
+    // Section title with anchor (use section.id for uniqueness)
+    parts.push(`## ${this.escapeMarkdown(section.title)} {#${section.id}}\n`);
 
     // URL
     parts.push(`**URL**: ${section.url}\n`);

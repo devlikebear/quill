@@ -100,7 +100,7 @@ export class DocumentGenerator {
   private buildTOC(pages: PageInfo[]): TOC {
     const items: TOCItem[] = pages.map((page, index) => ({
       title: page.title || `Page ${index + 1}`,
-      anchor: this.generateAnchor(page.title || `page-${index + 1}`),
+      anchor: `section-${index + 1}`,  // Match section.id for unique anchors
       depth: 1,
     }));
 
@@ -140,16 +140,6 @@ export class DocumentGenerator {
     }
 
     return section;
-  }
-
-  /**
-   * Generate anchor ID from text
-   */
-  private generateAnchor(text: string): string {
-    return text
-      .toLowerCase()
-      .replace(/[^a-z0-9가-힣]+/g, '-')
-      .replace(/^-+|-+$/g, '');
   }
 
   /**
