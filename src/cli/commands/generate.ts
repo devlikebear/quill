@@ -5,6 +5,9 @@
 import chalk from 'chalk';
 import ora from 'ora';
 import type { QuillConfig, OutputFormat } from '../../types/index.js';
+import { MainAgent } from '../../agent/main-agent.js';
+import fs from 'fs/promises';
+import path from 'path';
 
 interface GenerateOptions {
   url?: string;
@@ -19,7 +22,7 @@ interface GenerateOptions {
  * Generate documentation from a web application
  */
 export async function generateCommand(options: GenerateOptions): Promise<void> {
-  const spinner = ora('Generating documentation...').start();
+  const spinner = ora('Initializing...').start();
 
   try {
     // Validate required options
@@ -33,34 +36,63 @@ export async function generateCommand(options: GenerateOptions): Promise<void> {
       url: options.url,
       depth: options.depth ? parseInt(options.depth, 10) : 2,
       format: options.format ?? 'markdown',
-      output: options.output ?? './manual',
+      output: options.output ?? './output',
       language: options.language ?? 'en',
     };
 
-    spinner.info(chalk.cyan('Configuration:'));
-    console.log(chalk.gray(JSON.stringify(config, null, 2)));
+    spinner.text = 'Configuration loaded';
+    spinner.succeed();
 
-    // TODO: Implement actual documentation generation
-    spinner.warn(
-      chalk.yellow(
-        'Documentation generation is not yet implemented. This is a placeholder for v0.1.0.'
-      )
-    );
+    console.log(chalk.cyan('\n📋 Configuration:'));
+    console.log(chalk.gray(`  URL: ${config.url}`));
+    console.log(chalk.gray(`  Depth: ${config.depth}`));
+    console.log(chalk.gray(`  Format: ${config.format}`));
+    console.log(chalk.gray(`  Output: ${config.output}\n`));
 
-    spinner.info(chalk.cyan('\nPlanned workflow:'));
-    console.log('  1. Initialize Playwright browser');
-    console.log('  2. Navigate to target URL');
-    console.log('  3. Crawl pages up to specified depth');
-    console.log('  4. Capture screenshots and analyze UI elements');
-    console.log('  5. Generate documentation using Claude Agent SDK');
-    console.log('  6. Format output to specified format');
+    // Create main agent
+    const agent = new MainAgent(config);
 
-    spinner.succeed(chalk.green('Configuration validated successfully'));
+    spinner.start('Starting documentation generation...');
+
+    // Execute workflow
+    const result = await agent.execute();
+
+    if (!result.success || !result.data) {
+      throw new Error(result.error || 'Generation failed');
+    }
+
+    const pages = result.data;
+
+    spinner.succeed(chalk.green(`Documentation generation complete!`));
+
+    // Display results
+    console.log(chalk.cyan(`\n📊 Results:`));
+    console.log(chalk.gray(`  Pages crawled: ${pages.length}`));
+    console.log(chalk.gray(`  Screenshots saved: ${config.output}/screenshots\n`));
+
+    // Save page data
+    const outputDir = config.output ?? './output';
+    await fs.mkdir(outputDir, { recursive: true });
+
+    const dataPath = path.join(outputDir, 'pages.json');
+    await fs.writeFile(dataPath, JSON.stringify(pages, null, 2));
+
+    console.log(chalk.green(`✅ Page data saved: ${dataPath}\n`));
+
+    // Display sample pages
+    console.log(chalk.cyan('📄 Sample pages:'));
+    pages.slice(0, 5).forEach((page, index) => {
+      console.log(chalk.gray(`  ${index + 1}. ${page.title} - ${page.url}`));
+    });
+
+    if (pages.length > 5) {
+      console.log(chalk.gray(`  ... and ${pages.length - 5} more pages\n`));
+    }
   } catch (error) {
     spinner.fail(chalk.red('Failed to generate documentation'));
     if (error instanceof Error) {
-      console.error(chalk.red(error.message));
+      console.error(chalk.red(`\n❌ Error: ${error.message}\n`));
     }
-    throw error;
+    process.exit(1);
   }
 }
