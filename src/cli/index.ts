@@ -31,6 +31,12 @@ program
   .option('--format <format>', 'Output format (docx|markdown|html|pdf)', 'markdown')
   .option('--output <path>', 'Output file path', './manual')
   .option('--language <lang>', 'Documentation language', 'en')
+  .option('--auth-type <type>', 'Authentication type (session|basic|oauth)')
+  .option('--login-url <url>', 'Login page URL (for session-based auth)')
+  .option('--session-path <path>', 'Path to save/load session state', './session.json')
+  .option('--auth-interactive', 'Interactive authentication mode (prompts for credentials)')
+  .option('--username <username>', 'Username for authentication')
+  .option('--password <password>', 'Password for authentication')
   .action(generateCommand);
 
 // Global error handler
