@@ -119,33 +119,68 @@ export async function generateCommand(options: GenerateOptions): Promise<void> {
     const document = docResult.data;
     spinner.succeed(chalk.green('Document structure generated!'));
 
-    // Format document
+    // Format document based on selected format
     spinner.start('Formatting document...');
 
-    const formatter = new MarkdownFormatter();
-    const markdownContent = formatter.format(document, {
+    const outputDir = config.output ?? './output';
+    const dataPath = path.join(outputDir, 'pages.json');
+    let docPath: string;
+    let outputContent: string | Buffer;
+
+    const formatterOptions = {
       includeToc: true,
       includeScreenshots: true,
       includeElements: true,
-    });
+    };
+
+    switch (config.format) {
+      case 'markdown': {
+        const formatter = new MarkdownFormatter();
+        outputContent = formatter.format(document, formatterOptions);
+        docPath = path.join(outputDir, 'documentation.md');
+        break;
+      }
+
+      case 'docx': {
+        const { DocxFormatter } = await import('../../output/formatters/docx.js');
+        const formatter = new DocxFormatter();
+        outputContent = await formatter.format(document, formatterOptions);
+        docPath = path.join(outputDir, 'documentation.docx');
+        break;
+      }
+
+      case 'html': {
+        const { HtmlFormatter } = await import('../../output/formatters/html.js');
+        const formatter = new HtmlFormatter();
+        outputContent = formatter.format(document, formatterOptions);
+        docPath = path.join(outputDir, 'documentation.html');
+        break;
+      }
+
+      default:
+        throw new Error(`Unsupported format: ${config.format}`);
+    }
 
     spinner.succeed(chalk.green('Document formatted!'));
 
     // Save files
     spinner.start('Saving files...');
 
-    const outputDir = config.output ?? './output';
-    const dataPath = path.join(outputDir, 'pages.json');
-    const docPath = path.join(outputDir, 'documentation.md');
-
     await saveJsonFile(dataPath, pages);
-    await saveTextFile(docPath, markdownContent);
+
+    // Save formatted document (handle both string and Buffer)
+    if (Buffer.isBuffer(outputContent)) {
+      const fs = await import('fs/promises');
+      await fs.writeFile(docPath, outputContent);
+    } else {
+      await saveTextFile(docPath, outputContent);
+    }
 
     spinner.succeed(chalk.green('Files saved!'));
 
     // Display results
     console.log(chalk.cyan(`\n✅ Documentation Generated:\n`));
-    console.log(chalk.green(`  📄 Markdown: ${docPath}`));
+    console.log(chalk.green(`  📄 ${config.format.toUpperCase()}: ${docPath}`));
     console.log(chalk.gray(`  📊 Data: ${dataPath}`));
     console.log(chalk.gray(`  📸 Screenshots: ${config.output}/screenshots\n`));
 
