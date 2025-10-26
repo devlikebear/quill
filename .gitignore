@@ -36,5 +36,10 @@ coverage/
 tmp/
 temp/
 
+# Output directories
+output/
+manual/
+.playwright-mcp/
+
 # OS
 Thumbs.db

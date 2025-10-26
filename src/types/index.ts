@@ -159,9 +159,9 @@ export interface PageInfo {
  */
 export interface UIElement {
   /** Element type */
-  type: 'button' | 'input' | 'form' | 'link' | 'section' | 'other';
-  /** Element label or text */
-  label: string;
+  type: 'button' | 'input' | 'form' | 'link' | 'section' | 'heading' | 'other';
+  /** Element text content */
+  text: string;
   /** Element selector */
   selector?: string;
   /** Element description */

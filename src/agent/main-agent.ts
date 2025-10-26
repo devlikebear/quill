@@ -56,10 +56,14 @@ export class MainAgent {
       let toolUsageCount = 0;
 
       for await (const message of messageStream) {
+        // Log all message types for debugging
+        console.log(`[DEBUG] Message type: ${message.type}`);
+
         // Handle result
         if (message.type === 'result' && 'result' in message) {
           finalResult = message.result as string;
           logger.info('Received final result from agent');
+          console.log(`[DEBUG] Final result (full): ${finalResult}`);
         }
 
         // Handle assistant messages
@@ -68,6 +72,7 @@ export class MainAgent {
           if ('content' in assistantMessage && Array.isArray(assistantMessage.content)) {
             for (const block of assistantMessage.content) {
               if ('text' in block && typeof block.text === 'string') {
+                console.log(`[DEBUG] Assistant text (full): ${block.text}`);
                 // Try to parse JSON results from agent
                 try {
                   const parsed = JSON.parse(block.text);
@@ -78,8 +83,8 @@ export class MainAgent {
                       logger.info(`Agent returned ${parsed.length} pages`);
                     }
                   }
-                } catch {
-                  // Not JSON or parsing failed, continue
+                } catch (error) {
+                  console.log(`[DEBUG] JSON parse error: ${error}`);
                 }
               }
             }
@@ -94,13 +99,23 @@ export class MainAgent {
       // If no pages in structured format, try parsing final result
       if (pages.length === 0 && finalResult) {
         try {
-          const parsed = JSON.parse(finalResult);
+          // Extract JSON from markdown code blocks if present
+          let jsonString = finalResult.trim();
+
+          // Try to find markdown code block pattern: ```json ... ``` or ``` ... ```
+          const codeBlockMatch = jsonString.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/);
+          if (codeBlockMatch && codeBlockMatch[1]) {
+            jsonString = codeBlockMatch[1].trim();
+          }
+
+          const parsed = JSON.parse(jsonString);
           if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].url) {
             pages.push(...parsed);
             logger.info(`Parsed ${pages.length} pages from final result`);
           }
-        } catch {
+        } catch (error) {
           logger.warn('Could not parse final result as page data');
+          console.log(`[DEBUG] Parse error: ${error}`);
         }
       }
 
@@ -129,63 +144,41 @@ export class MainAgent {
    * Build system prompt for the agent
    */
   private buildSystemPrompt(hasMcp: boolean): string {
-    const mcpNote = hasMcp
-      ? 'You have access to Playwright MCP for browser automation.'
-      : '⚠️ WARNING: No MCP servers are available. You cannot use Playwright tools.';
+    const toolsInfo = hasMcp
+      ? `TOOLS AVAILABLE: Playwright MCP browser automation
+- browser_navigate(url) - Navigate to a URL
+- browser_snapshot() - Get page content/structure
+- browser_take_screenshot(path) - Capture screenshot
+- Use these tools to crawl the website`
+      : '⚠️ No browser tools available';
 
-    return `You are an expert technical documentation generator powered by Claude.
+    return `You are a web documentation expert. Crawl websites and extract page information.
 
-${mcpNote}
+${toolsInfo}
 
-Your task is to:
-1. Navigate web applications using available tools
-2. Crawl pages systematically (BFS algorithm, depth-limited)
-3. Analyze UI elements and their purpose using AI understanding
-4. Generate MEANINGFUL, DETAILED descriptions for each element
-5. Capture screenshots of important pages
-6. Return structured page information as JSON
-
-Output Format:
-You MUST return a JSON array of pages with this EXACT structure:
+OUTPUT: Return ONLY a valid JSON array with this structure:
 [
   {
     "url": "https://example.com/page",
     "title": "Page Title",
-    "description": "AI-generated page description explaining what this page does",
-    "screenshot": "path/to/screenshot.png",
-    "links": ["https://example.com/link1", "https://example.com/link2"],
+    "description": "Brief description of what this page does",
+    "screenshot": "screenshots/page.png",
+    "links": ["url1", "url2"],
     "elements": [
       {
-        "type": "button",
-        "text": "Submit",
-        "description": "Submit button to save user profile changes and update the database"
-      },
-      {
-        "type": "input",
-        "text": "Email Address",
-        "description": "Text input field for entering user email address, validated for correct email format"
+        "type": "button|input|link",
+        "text": "Element label/text",
+        "description": "What this element does (be specific)"
       }
     ]
   }
 ]
 
-CRITICAL REQUIREMENTS:
-- Element descriptions MUST be meaningful and explain PURPOSE (not just "button" or "input")
-- Prioritize important pages (dashboards, main features, frequently used pages)
-- Respect the crawling depth limit
-- Handle authentication if configured
-- Be thorough but efficient with tool usage
-- Return ONLY the JSON array, no additional text
-
-Example of GOOD element descriptions:
-✅ "Login button that authenticates user credentials and redirects to dashboard"
-✅ "Search input field for finding products by name, category, or SKU"
-✅ "Settings link that opens user preferences panel for customizing notifications"
-
-Example of BAD element descriptions:
-❌ "button"
-❌ "input field"
-❌ "link"`;
+RULES:
+- Return ONLY valid JSON (no markdown, no explanations)
+- Element descriptions should explain PURPOSE not just type
+- Capture main interactive elements only
+- Keep it simple and focused`;
   }
 
   /**
@@ -193,38 +186,21 @@ Example of BAD element descriptions:
    */
   private buildTaskPrompt(): string {
     const depth = this.config.depth ?? 2;
-    const authNote = this.config.auth
-      ? `
 
-**Authentication Required:**
-- Login URL: ${this.config.auth.loginUrl || this.config.url}
-- Use the configured credentials to authenticate before crawling
-- Maintain session throughout the crawl`
-      : '';
+    return `Crawl this website and extract page information:
 
-    return `Generate comprehensive documentation for the following web application:
+URL: ${this.config.url}
+Max Depth: ${depth} levels
 
-**Target URL:** ${this.config.url}
-**Crawling Depth:** ${depth} levels
-**Output Format:** ${this.config.format || 'markdown'}${authNote}
+STEPS:
+1. Use browser_navigate to visit ${this.config.url}
+2. Use browser_snapshot to get page content
+3. Use browser_take_screenshot to capture page image
+4. Extract page title, description, links, and key UI elements
+5. For depth ${depth}, follow ${depth > 1 ? 'up to ' + depth + ' link(s)' : '1 link'} and repeat steps 1-4
+6. Return JSON array of ALL pages visited
 
-**Workflow:**
-1. Navigate to ${this.config.url}${this.config.auth ? '\n2. Authenticate using provided credentials' : ''}
-${this.config.auth ? '3' : '2'}. Start crawling from the home page
-${this.config.auth ? '4' : '3'}. For each page (up to depth ${depth}):
-   - Take screenshot
-   - Extract ALL interactive UI elements (buttons, inputs, links, forms, etc.)
-   - Generate AI-powered descriptions explaining each element's PURPOSE
-   - Identify navigation links for next crawl level
-${this.config.auth ? '5' : '4'}. Return complete JSON array of all pages crawled
-
-**Important:**
-- Focus on meaningful element descriptions using your AI understanding
-- Prioritize user-facing pages over technical/admin pages
-- Maintain consistent JSON structure
-- Be efficient with screenshot capture
-
-Begin crawling now and return the JSON array.`;
+Start now. Return ONLY the JSON array.`;
   }
 
   /**

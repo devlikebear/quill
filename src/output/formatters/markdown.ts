@@ -192,9 +192,9 @@ export class MarkdownFormatter extends BaseFormatter {
 
     for (const element of elements) {
       const type = element.type;
-      const label = this.escapeMarkdown(element.label);
+      const text = this.escapeMarkdown(element.text);
 
-      parts.push(`- **${type}**: ${label}\n`);
+      parts.push(`- **${type}**: ${text}\n`);
 
       if (element.description) {
         parts.push(`  - ${this.escapeMarkdown(element.description)}\n`);
