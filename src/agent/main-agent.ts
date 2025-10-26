@@ -4,10 +4,6 @@
 
 import { query } from '@anthropic-ai/claude-agent-sdk';
 import type { QuillConfig, AgentResult, PageInfo } from '../types/index.js';
-import {
-  loadAnthropicCredentials,
-  validateCredentials,
-} from '../utils/credentials.js';
 import { loadMcpServers } from '../utils/mcp-loader.js';
 import { logger } from '../utils/logger.js';
 
@@ -28,22 +24,14 @@ export class MainAgent {
     try {
       logger.info('Starting Claude Agent SDK workflow...');
 
-      // 1. Load and validate credentials
-      const credentials = loadAnthropicCredentials();
-      if (!validateCredentials(credentials)) {
-        throw new Error('Invalid Anthropic credentials format');
-      }
-      logger.info(`Using ${credentials.type} authentication`);
-
-      // 2. Load MCP servers
+      // 1. Load MCP servers
       const mcpServers = loadMcpServers();
       const hasMcp = Object.keys(mcpServers).length > 0;
 
-      // 3. Build prompts
       const systemPrompt = this.buildSystemPrompt(hasMcp);
       const taskPrompt = this.buildTaskPrompt();
 
-      // 4. Execute query
+      // 3. Execute query (SDK handles credentials automatically)
       logger.info('Executing Agent query...');
       const modelName = this.config.agentModel || process.env.CLAUDE_MODEL || 'claude-opus-4-1-20250805';
       logger.info(`Model: ${modelName}`);

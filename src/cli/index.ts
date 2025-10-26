@@ -2,10 +2,14 @@
  * Quill CLI - Command Line Interface
  */
 
+import { config } from 'dotenv';
 import { Command } from 'commander';
 import chalk from 'chalk';
 import { initCommand } from './commands/init.js';
 import { generateCommand } from './commands/generate.js';
+
+// Load environment variables from .env file
+config();
 
 const program = new Command();
 
