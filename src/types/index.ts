@@ -41,6 +41,71 @@ export interface AuthConfig {
   password?: string;
   /** Session storage path */
   sessionPath?: string;
+  /** Interactive authentication mode */
+  interactive?: boolean;
+  /** Authentication timeout in milliseconds */
+  timeout?: number;
+}
+
+/**
+ * User credentials
+ */
+export interface Credentials {
+  /** Username */
+  username: string;
+  /** Password */
+  password: string;
+}
+
+/**
+ * Session state from Playwright
+ */
+export interface SessionState {
+  /** Cookies */
+  cookies: Array<{
+    name: string;
+    value: string;
+    domain: string;
+    path: string;
+    expires: number;
+    httpOnly: boolean;
+    secure: boolean;
+    sameSite?: 'Strict' | 'Lax' | 'None';
+  }>;
+  /** Origins with localStorage */
+  origins: Array<{
+    origin: string;
+    localStorage: Array<{
+      name: string;
+      value: string;
+    }>;
+  }>;
+}
+
+/**
+ * Login form elements
+ */
+export interface FormElements {
+  /** Username input element selector */
+  usernameSelector?: string;
+  /** Password input element selector */
+  passwordSelector?: string;
+  /** Submit button selector */
+  submitSelector?: string;
+}
+
+/**
+ * Login options
+ */
+export interface LoginOptions {
+  /** Login URL */
+  loginUrl: string;
+  /** Login timeout in milliseconds */
+  timeout?: number;
+  /** Success URL pattern (regex or string) */
+  successPattern?: string;
+  /** Error message selectors */
+  errorSelectors?: string[];
 }
 
 /**

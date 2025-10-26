@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2024-10-26
+
+### Added
+- **Authentication Support**: Complete authentication system for internal systems
+  - Session-based authentication with login automation
+  - Credential management (environment variables, config, interactive mode)
+  - Session state persistence and reuse across runs
+  - Automatic login form detection and submission
+- **Session Manager**: Manages Playwright session state
+  - Load and save session state from/to file
+  - Session validation and expiry checking
+  - Session information retrieval (cookie count, expiry)
+- **Credential Provider**: Multiple credential sources
+  - Environment variables (QUILL_USERNAME, QUILL_PASSWORD)
+  - Configuration file credentials
+  - Interactive mode with secure prompts
+  - Credential validation
+- **Login Agent**: Automated login form handling
+  - Intelligent form field detection (username, password, submit)
+  - Multiple selector strategies for compatibility
+  - Login success verification
+  - Error message detection
+- **CLI Authentication Options**:
+  - `--auth-type` for authentication method
+  - `--login-url` for custom login pages
+  - `--session-path` for session persistence
+  - `--auth-interactive` for prompted credentials
+  - `--username` and `--password` for direct credentials
+
+### Changed
+- Main agent now handles authentication workflow before crawling
+- Playwright context can be initialized with stored session state
+- Generate command displays authentication configuration
+- Build configuration externalized Node.js built-in modules
+
+### Technical Details
+- Session state stored as JSON with cookie and localStorage data
+- Login form detection uses multiple selector patterns
+- Session validation checks cookie expiry timestamps
+- Automatic session refresh on expiry
+- Clean separation of auth concerns (SessionManager, CredentialProvider, LoginAgent)
+
 ## [0.3.0] - 2024-10-26
 
 ### Added
@@ -110,7 +152,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Playwright for browser automation
 - Claude Agent SDK integration (planned)
 
-[Unreleased]: https://github.com/devlikebear/quill/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/devlikebear/quill/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/devlikebear/quill/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/devlikebear/quill/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/devlikebear/quill/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/devlikebear/quill/releases/tag/v0.1.0

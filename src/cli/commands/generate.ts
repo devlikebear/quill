@@ -17,6 +17,13 @@ interface GenerateOptions {
   output?: string;
   language?: string;
   config?: string;
+  // Authentication options
+  authType?: 'session' | 'basic' | 'oauth';
+  loginUrl?: string;
+  sessionPath?: string;
+  authInteractive?: boolean;
+  username?: string;
+  password?: string;
 }
 
 /**
@@ -41,6 +48,18 @@ export async function generateCommand(options: GenerateOptions): Promise<void> {
       language: options.language ?? 'en',
     };
 
+    // Add authentication configuration if provided
+    if (options.authType) {
+      config.auth = {
+        type: options.authType,
+        loginUrl: options.loginUrl,
+        sessionPath: options.sessionPath ?? './session.json',
+        interactive: options.authInteractive,
+        username: options.username,
+        password: options.password,
+      };
+    }
+
     spinner.text = 'Configuration loaded';
     spinner.succeed();
 
@@ -48,7 +67,25 @@ export async function generateCommand(options: GenerateOptions): Promise<void> {
     console.log(chalk.gray(`  URL: ${config.url}`));
     console.log(chalk.gray(`  Depth: ${config.depth}`));
     console.log(chalk.gray(`  Format: ${config.format}`));
-    console.log(chalk.gray(`  Output: ${config.output}\n`));
+    console.log(chalk.gray(`  Output: ${config.output}`));
+
+    if (config.auth) {
+      console.log(chalk.gray(`  Auth Type: ${config.auth.type}`));
+      if (config.auth.loginUrl) {
+        console.log(chalk.gray(`  Login URL: ${config.auth.loginUrl}`));
+      }
+      if (config.auth.sessionPath) {
+        console.log(chalk.gray(`  Session Path: ${config.auth.sessionPath}`));
+      }
+      if (config.auth.username) {
+        console.log(chalk.gray(`  Username: ${config.auth.username}`));
+      }
+      if (config.auth.interactive) {
+        console.log(chalk.gray(`  Interactive Mode: enabled`));
+      }
+    }
+
+    console.log('');
 
     // Create main agent
     const agent = new MainAgent(config);
