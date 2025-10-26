@@ -1,241 +1,267 @@
 /**
- * Main Agent - Orchestrates the documentation generation workflow
+ * Main Agent - Claude Agent SDK based orchestrator
  */
 
-import type { QuillConfig, AgentResult, PageInfo, Document } from '../types/index.js';
-import { PlaywrightMCP } from '../mcp/playwright.js';
-import { WebCrawlerAgent } from './subagents/web-crawler.js';
-import { DocumentGenerator } from './subagents/document-generator.js';
-import { LoginAgent } from './subagents/login-agent.js';
-import { SessionManager } from '../auth/session-manager.js';
-import { CredentialProvider } from '../auth/credential-provider.js';
+import { query } from '@anthropic-ai/claude-agent-sdk';
+import type { QuillConfig, AgentResult, PageInfo } from '../types/index.js';
+import {
+  loadAnthropicCredentials,
+  validateCredentials,
+} from '../utils/credentials.js';
+import { loadMcpServers } from '../utils/mcp-loader.js';
 import { logger } from '../utils/logger.js';
 
 /**
- * Main orchestrator agent for Quill documentation generation
+ * Main orchestrator agent using Claude Agent SDK
  */
 export class MainAgent {
   private config: QuillConfig;
-  private playwright: PlaywrightMCP;
-  private crawler?: WebCrawlerAgent;
-  private documentGenerator?: DocumentGenerator;
-  private sessionManager?: SessionManager;
-  private loginAgent?: LoginAgent;
-  private credentialProvider?: CredentialProvider;
 
   constructor(config: QuillConfig) {
     this.config = config;
-    this.playwright = new PlaywrightMCP({
-      headless: true,
-      timeout: 30000,
-    });
-    this.documentGenerator = new DocumentGenerator({
-      title: `${new URL(config.url).hostname} Documentation`,
-      includeDescriptions: true,
-      includeElements: true,
-    });
-
-    // Initialize authentication components if auth is configured
-    if (config.auth) {
-      this.sessionManager = new SessionManager();
-      this.credentialProvider = new CredentialProvider();
-    }
   }
 
   /**
-   * Execute the documentation generation workflow
+   * Execute documentation generation workflow using Agent SDK
    */
   async execute(): Promise<AgentResult<PageInfo[]>> {
     try {
-      logger.info('Starting documentation generation workflow...');
+      logger.info('Starting Claude Agent SDK workflow...');
 
-      // 1. Initialize Playwright browser
-      const initResult = await this.playwright.init();
-      if (!initResult.success) {
-        throw new Error(initResult.error);
+      // 1. Load and validate credentials
+      const credentials = loadAnthropicCredentials();
+      if (!validateCredentials(credentials)) {
+        throw new Error('Invalid Anthropic credentials format');
       }
+      logger.info(`Using ${credentials.type} authentication`);
 
-      // 2. Handle authentication if configured
-      if (this.config.auth) {
-        const authResult = await this.handleAuthentication();
-        if (!authResult.success) {
-          throw new Error(authResult.error || 'Authentication failed');
+      // 2. Load MCP servers
+      const mcpServers = loadMcpServers();
+      const hasMcp = Object.keys(mcpServers).length > 0;
+
+      // 3. Build prompts
+      const systemPrompt = this.buildSystemPrompt(hasMcp);
+      const taskPrompt = this.buildTaskPrompt();
+
+      // 4. Execute query
+      logger.info('Executing Agent query...');
+      const modelName = this.config.agentModel || process.env.CLAUDE_MODEL || 'claude-opus-4-1-20250805';
+      logger.info(`Model: ${modelName}`);
+
+      const messageStream = query({
+        prompt: taskPrompt,
+        options: {
+          model: modelName,
+          systemPrompt,
+          permissionMode:
+            (this.config.permissionMode as any) ||
+            (process.env.CLAUDE_PERMISSION_MODE as any) ||
+            'default',
+          allowedTools: this.getAllowedTools(),
+          mcpServers: hasMcp ? mcpServers : undefined,
+        },
+      });
+
+      // 5. Process streaming response
+      let finalResult = '';
+      const pages: PageInfo[] = [];
+      let toolUsageCount = 0;
+
+      for await (const message of messageStream) {
+        // Handle result
+        if (message.type === 'result' && 'result' in message) {
+          finalResult = message.result as string;
+          logger.info('Received final result from agent');
+        }
+
+        // Handle assistant messages
+        if (message.type === 'assistant' && 'message' in message) {
+          const assistantMessage = message.message;
+          if ('content' in assistantMessage && Array.isArray(assistantMessage.content)) {
+            for (const block of assistantMessage.content) {
+              if ('text' in block && typeof block.text === 'string') {
+                // Try to parse JSON results from agent
+                try {
+                  const parsed = JSON.parse(block.text);
+                  if (Array.isArray(parsed) && parsed.length > 0) {
+                    // Validate it's page data
+                    if (parsed[0].url && parsed[0].title) {
+                      pages.push(...parsed);
+                      logger.info(`Agent returned ${parsed.length} pages`);
+                    }
+                  }
+                } catch {
+                  // Not JSON or parsing failed, continue
+                }
+              }
+            }
+          }
         }
       }
 
-      // 3. Create web crawler agent
-      this.crawler = new WebCrawlerAgent(this.playwright, {
-        maxDepth: this.config.depth ?? 2,
-        maxPages: this.config.options?.maxPages ?? 50,
-        outputDir: this.config.output ?? './output/screenshots',
-      });
+      logger.info('Agent execution completed');
+      logger.info(`- Tool usages: ${toolUsageCount}`);
+      logger.info(`- Pages found: ${pages.length}`);
 
-      // 4. Crawl pages
-      const crawlResult = await this.crawler.crawl(this.config.url);
-      if (!crawlResult.success || !crawlResult.data) {
-        throw new Error(crawlResult.error || 'Crawl failed');
+      // If no pages in structured format, try parsing final result
+      if (pages.length === 0 && finalResult) {
+        try {
+          const parsed = JSON.parse(finalResult);
+          if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].url) {
+            pages.push(...parsed);
+            logger.info(`Parsed ${pages.length} pages from final result`);
+          }
+        } catch {
+          logger.warn('Could not parse final result as page data');
+        }
       }
 
-      const pages = crawlResult.data;
-
-      logger.success(`Documentation generation complete. Collected ${pages.length} pages.`);
+      if (pages.length === 0) {
+        logger.warn('No pages were extracted. Agent may have failed to crawl.');
+        return {
+          success: false,
+          error: 'No pages were crawled. Check if MCP servers are configured correctly.',
+        };
+      }
 
       return {
         success: true,
         data: pages,
-        metadata: {
-          config: this.config,
-          pageCount: pages.length,
-        },
       };
     } catch (error) {
-      logger.error('Documentation generation failed', error);
+      logger.error('Agent execution failed:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      };
-    } finally {
-      // Always close browser
-      await this.playwright.close();
-    }
-  }
-
-  /**
-   * Get collected pages
-   */
-  getPages(): PageInfo[] {
-    return this.crawler?.getResults() ?? [];
-  }
-
-  /**
-   * Generate document from collected pages
-   */
-  generateDocument(pages: PageInfo[]): AgentResult<Document> {
-    if (!this.documentGenerator) {
-      return {
-        success: false,
-        error: 'Document generator not initialized',
-      };
-    }
-
-    return this.documentGenerator.generate(pages);
-  }
-
-  /**
-   * Handle authentication workflow
-   */
-  private async handleAuthentication(): Promise<AgentResult<void>> {
-    try {
-      const authConfig = this.config.auth!;
-      const sessionPath = authConfig.sessionPath || './session.json';
-
-      logger.info('Checking authentication...');
-
-      // 1. Try to load existing session
-      if (this.sessionManager) {
-        const sessionExists = await this.sessionManager.exists(sessionPath);
-
-        if (sessionExists) {
-          logger.info('Loading existing session...');
-          const loadResult = await this.sessionManager.load(sessionPath);
-
-          if (loadResult.success && loadResult.data) {
-            const isValid = await this.sessionManager.isValid(loadResult.data);
-
-            if (isValid) {
-              logger.success('Valid session found, applying to browser context');
-              await this.applySessionState(loadResult.data);
-              return { success: true };
-            } else {
-              logger.warn('Session expired, will perform fresh login');
-            }
-          }
-        } else {
-          logger.info('No existing session found, will perform login');
-        }
-      }
-
-      // 2. Perform login if no valid session
-      logger.info('Performing authentication...');
-
-      // Get credentials
-      if (!this.credentialProvider) {
-        throw new Error('Credential provider not initialized');
-      }
-
-      const credResult = await this.credentialProvider.getCredentials(authConfig);
-      if (!credResult.success || !credResult.data) {
-        throw new Error(credResult.error || 'Failed to get credentials');
-      }
-
-      const credentials = credResult.data;
-
-      // Validate credentials
-      if (!this.credentialProvider.validateCredentials(credentials)) {
-        throw new Error('Invalid credentials provided');
-      }
-
-      // Initialize login agent
-      const loginUrl = authConfig.loginUrl || this.config.url;
-      this.loginAgent = new LoginAgent(this.playwright, {
-        loginUrl,
-        timeout: authConfig.timeout,
-      });
-
-      // Perform login
-      const loginResult = await this.loginAgent.login(credentials);
-      if (!loginResult.success || !loginResult.data) {
-        throw new Error(loginResult.error || 'Login failed');
-      }
-
-      const sessionState = loginResult.data;
-
-      // Save session for future use
-      if (this.sessionManager) {
-        await this.sessionManager.save(sessionPath, sessionState);
-      }
-
-      logger.success('Authentication successful');
-
-      return { success: true };
-    } catch (error) {
-      logger.error('Authentication failed', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
       };
     }
   }
 
   /**
-   * Apply session state to Playwright context
+   * Build system prompt for the agent
    */
-  private async applySessionState(sessionState: any): Promise<void> {
-    const context = this.playwright['context'];
-    if (!context) {
-      throw new Error('Playwright context not initialized');
+  private buildSystemPrompt(hasMcp: boolean): string {
+    const mcpNote = hasMcp
+      ? 'You have access to Playwright MCP for browser automation.'
+      : '⚠️ WARNING: No MCP servers are available. You cannot use Playwright tools.';
+
+    return `You are an expert technical documentation generator powered by Claude.
+
+${mcpNote}
+
+Your task is to:
+1. Navigate web applications using available tools
+2. Crawl pages systematically (BFS algorithm, depth-limited)
+3. Analyze UI elements and their purpose using AI understanding
+4. Generate MEANINGFUL, DETAILED descriptions for each element
+5. Capture screenshots of important pages
+6. Return structured page information as JSON
+
+Output Format:
+You MUST return a JSON array of pages with this EXACT structure:
+[
+  {
+    "url": "https://example.com/page",
+    "title": "Page Title",
+    "description": "AI-generated page description explaining what this page does",
+    "screenshot": "path/to/screenshot.png",
+    "links": ["https://example.com/link1", "https://example.com/link2"],
+    "elements": [
+      {
+        "type": "button",
+        "text": "Submit",
+        "description": "Submit button to save user profile changes and update the database"
+      },
+      {
+        "type": "input",
+        "text": "Email Address",
+        "description": "Text input field for entering user email address, validated for correct email format"
+      }
+    ]
+  }
+]
+
+CRITICAL REQUIREMENTS:
+- Element descriptions MUST be meaningful and explain PURPOSE (not just "button" or "input")
+- Prioritize important pages (dashboards, main features, frequently used pages)
+- Respect the crawling depth limit
+- Handle authentication if configured
+- Be thorough but efficient with tool usage
+- Return ONLY the JSON array, no additional text
+
+Example of GOOD element descriptions:
+✅ "Login button that authenticates user credentials and redirects to dashboard"
+✅ "Search input field for finding products by name, category, or SKU"
+✅ "Settings link that opens user preferences panel for customizing notifications"
+
+Example of BAD element descriptions:
+❌ "button"
+❌ "input field"
+❌ "link"`;
+  }
+
+  /**
+   * Build task-specific prompt
+   */
+  private buildTaskPrompt(): string {
+    const depth = this.config.depth ?? 2;
+    const authNote = this.config.auth
+      ? `
+
+**Authentication Required:**
+- Login URL: ${this.config.auth.loginUrl || this.config.url}
+- Use the configured credentials to authenticate before crawling
+- Maintain session throughout the crawl`
+      : '';
+
+    return `Generate comprehensive documentation for the following web application:
+
+**Target URL:** ${this.config.url}
+**Crawling Depth:** ${depth} levels
+**Output Format:** ${this.config.format || 'markdown'}${authNote}
+
+**Workflow:**
+1. Navigate to ${this.config.url}${this.config.auth ? '\n2. Authenticate using provided credentials' : ''}
+${this.config.auth ? '3' : '2'}. Start crawling from the home page
+${this.config.auth ? '4' : '3'}. For each page (up to depth ${depth}):
+   - Take screenshot
+   - Extract ALL interactive UI elements (buttons, inputs, links, forms, etc.)
+   - Generate AI-powered descriptions explaining each element's PURPOSE
+   - Identify navigation links for next crawl level
+${this.config.auth ? '5' : '4'}. Return complete JSON array of all pages crawled
+
+**Important:**
+- Focus on meaningful element descriptions using your AI understanding
+- Prioritize user-facing pages over technical/admin pages
+- Maintain consistent JSON structure
+- Be efficient with screenshot capture
+
+Begin crawling now and return the JSON array.`;
+  }
+
+  /**
+   * Get allowed tools based on configuration
+   */
+  private getAllowedTools(): string[] {
+    // Check config first
+    if (this.config.allowedTools && this.config.allowedTools.length > 0) {
+      return this.config.allowedTools;
     }
 
-    // Close current context and create new one with session state
-    await context.close();
-
-    const browser = this.playwright['browser'];
-    if (!browser) {
-      throw new Error('Playwright browser not initialized');
+    // Check environment variable
+    const envTools = process.env.CLAUDE_ALLOWED_TOOLS;
+    if (envTools) {
+      return envTools.split(',').map((t) => t.trim());
     }
 
-    const newContext = await browser.newContext({
-      storageState: sessionState,
-      viewport: { width: 1920, height: 1080 },
-      userAgent:
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    });
-
-    const newPage = await newContext.newPage();
-    newPage.setDefaultTimeout(30000);
-
-    // Update playwright instance
-    this.playwright['context'] = newContext;
-    this.playwright['page'] = newPage;
+    // Default tools
+    return [
+      'WebSearch',
+      'WebFetch',
+      'Read',
+      'Write',
+      'Bash',
+      // MCP tools will be available if MCP servers are loaded
+    ];
   }
 }

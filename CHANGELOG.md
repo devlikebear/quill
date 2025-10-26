@@ -7,6 +7,121 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2025-01-26
+
+### 🎉 Major Release: Claude Agent SDK Migration
+
+v1.0.0은 Quill의 완전한 재작성 버전입니다. Claude Agent SDK를 기반으로 구축되어 더 강력하고 안정적인 문서 생성 기능을 제공합니다.
+
+### ⚠️ Breaking Changes
+
+- **Claude Agent SDK 기반 재작성**: 기존 Playwright 직접 사용 방식에서 Claude Agent SDK의 `query()` 함수를 사용하는 방식으로 전환
+- **Playwright MCP 전환**: Playwright를 직접 사용하지 않고 MCP (Model Context Protocol) 서버로 사용
+- **이중 인증 방식 지원**: API Key와 Claude Code 구독 계정 모두 지원
+- **환경 변수 변경**:
+  - `ANTHROPIC_API_KEY` 사용 (API Key 방식)
+  - `ANTHROPIC_HOME` 사용 (Claude Code 방식)
+- **MCP 서버 설정 필요**: `~/.claude/mcp-servers.json` 파일 설정 필요
+
+### ✨ Added
+
+- **이중 인증 지원**: API Key와 Claude Code 구독 계정 방식 모두 지원
+- **Credential Loader** (`src/utils/credentials.ts`): Anthropic 인증 정보 로딩 유틸리티
+  - API Key 우선 순위 로딩
+  - Claude Code credentials.json 지원
+  - 인증 정보 검증 기능
+- **MCP Loader** (`src/utils/mcp-loader.ts`): MCP 서버 설정 로딩 유틸리티
+  - ~/.claude/mcp-servers.json 파일 로딩
+  - ENABLED_MCP_SERVERS 환경 변수 지원
+  - 서버별 활성화/비활성화 기능
+- **설정 파일 템플릿**:
+  - `.env.example`: 환경 변수 설정 예시
+  - `mcp-servers.example.json`: MCP 서버 설정 예시
+- **Agent SDK 옵션**: QuillConfig에 SDK 설정 필드 추가
+  - `agentModel`: Claude 모델 선택 (기본: claude-opus-4-1-20250805)
+  - `permissionMode`: 권한 모드 설정
+  - `allowedTools`: 허용할 도구 목록
+  - `mcpServers`: MCP 서버 설정 오버라이드
+
+### 🔄 Changed
+
+- **Main Agent 재작성** (`src/agent/main-agent.ts`):
+  - Claude Agent SDK의 `query()` 함수 사용
+  - 스트리밍 응답 처리 방식 개선
+  - AI가 생성한 의미있는 UI 요소 설명 강조
+  - System Prompt와 Task Prompt 분리
+  - JSON 배열 형식의 구조화된 응답 처리
+- **Document Generator 분리**: 문서 생성 로직을 별도 클래스로 분리
+  - MainAgent는 크롤링만 담당
+  - DocumentGenerator가 문서 구조 생성 담당
+- **CLI 명령 업데이트**: SDK 기반 워크플로우에 맞게 조정
+  - generate.ts에서 DocumentGenerator 직접 사용
+  - 더 명확한 책임 분리
+
+### 🗑️ Removed
+
+- **Direct Playwright Usage**: `src/mcp/playwright.ts` 제거 (Playwright MCP로 대체)
+- **Old Subagents**:
+  - `src/agent/subagents/web-crawler.ts` (Agent SDK가 크롤링 처리)
+  - `src/agent/subagents/login-agent.ts` (향후 재구현 예정)
+- **Package Dependencies**:
+  - `@anthropic-ai/sdk` 제거
+  - `playwright` 제거 (MCP 서버로 대체)
+
+### 📦 Dependencies
+
+- **Added**: `@anthropic-ai/claude-agent-sdk@^0.1.27`
+- **Removed**: `@anthropic-ai/sdk`, `playwright`
+
+### 📚 Documentation
+
+- README.md 전면 업데이트 (v1.0.0 기준)
+- 인증 방식 가이드 추가 (API Key vs Claude Code)
+- MCP 서버 설정 가이드 추가
+- 환경 변수 설명 개선
+- 마이그레이션 가이드 추가
+
+### 🔧 Internal
+
+- TypeScript 타입 정의 개선
+- 빌드 프로세스 최적화
+- 코드 구조 개선 및 불필요한 파일 제거
+- Export 목록 정리 (index.ts)
+
+### 📝 Migration Guide (v0.5.0 → v1.0.0)
+
+**1. 환경 변수 업데이트**
+
+```bash
+# 이전 (.env)
+CLAUDE_API_KEY=sk-ant-xxxxxxxxxxxxx
+
+# 현재 (.env)
+ANTHROPIC_API_KEY=sk-ant-xxxxxxxxxxxxx
+```
+
+**2. MCP 서버 설정**
+
+`~/.claude/mcp-servers.json` 파일 생성:
+
+```json
+{
+  "mcpServers": {
+    "playwright": {
+      "command": "npx",
+      "args": ["@playwright/mcp@latest"]
+    }
+  }
+}
+```
+
+**3. 의존성 재설치**
+
+```bash
+npm install
+npm run build
+```
+
 ## [0.5.0] - 2024-10-26
 
 ### Added
@@ -202,7 +317,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Playwright for browser automation
 - Claude Agent SDK integration (planned)
 
-[Unreleased]: https://github.com/devlikebear/quill/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/devlikebear/quill/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/devlikebear/quill/compare/v0.5.0...v1.0.0
 [0.5.0]: https://github.com/devlikebear/quill/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/devlikebear/quill/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/devlikebear/quill/compare/v0.2.0...v0.3.0

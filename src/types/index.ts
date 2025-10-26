@@ -20,6 +20,16 @@ export interface QuillConfig {
   auth?: AuthConfig;
   /** Documentation options */
   options?: DocumentationOptions;
+
+  // Agent SDK options (v1.0.0+)
+  /** Claude model to use (default: claude-opus-4-1-20250805) */
+  agentModel?: string;
+  /** Permission mode for Claude Agent SDK */
+  permissionMode?: 'default' | 'acceptEdits' | 'bypassPermissions' | 'plan';
+  /** Allowed tools for Claude Agent SDK */
+  allowedTools?: string[];
+  /** MCP servers configuration (overrides ~/.claude/mcp-servers.json) */
+  mcpServers?: Record<string, any>;
 }
 
 /**

@@ -5,4 +5,3 @@
 
 export * from './types/index.js';
 export { MainAgent } from './agent/main-agent.js';
-export { PlaywrightMCP } from './mcp/playwright.js';
