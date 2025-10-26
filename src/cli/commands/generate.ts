@@ -6,6 +6,7 @@ import chalk from 'chalk';
 import ora from 'ora';
 import type { QuillConfig, OutputFormat } from '../../types/index.js';
 import { MainAgent } from '../../agent/main-agent.js';
+import { DocumentGenerator } from '../../agent/subagents/document-generator.js';
 import { MarkdownFormatter } from '../../output/formatters/markdown.js';
 import { saveTextFile, saveJsonFile } from '../../utils/file-utils.js';
 import path from 'path';
@@ -111,7 +112,13 @@ export async function generateCommand(options: GenerateOptions): Promise<void> {
     // Generate document
     spinner.start('Generating documentation...');
 
-    const docResult = agent.generateDocument(pages);
+    const documentGenerator = new DocumentGenerator({
+      title: `${new URL(config.url).hostname} Documentation`,
+      includeDescriptions: true,
+      includeElements: true,
+    });
+
+    const docResult = documentGenerator.generate(pages);
     if (!docResult.success || !docResult.data) {
       throw new Error(docResult.error || 'Document generation failed');
     }
