@@ -6,7 +6,8 @@ import chalk from 'chalk';
 import ora from 'ora';
 import type { QuillConfig, OutputFormat } from '../../types/index.js';
 import { MainAgent } from '../../agent/main-agent.js';
-import fs from 'fs/promises';
+import { MarkdownFormatter } from '../../output/formatters/markdown.js';
+import { saveTextFile, saveJsonFile } from '../../utils/file-utils.js';
 import path from 'path';
 
 interface GenerateOptions {
@@ -63,21 +64,53 @@ export async function generateCommand(options: GenerateOptions): Promise<void> {
 
     const pages = result.data;
 
-    spinner.succeed(chalk.green(`Documentation generation complete!`));
+    spinner.succeed(chalk.green(`Web crawling complete!`));
 
-    // Display results
-    console.log(chalk.cyan(`\n📊 Results:`));
+    // Display crawl results
+    console.log(chalk.cyan(`\n📊 Crawl Results:`));
     console.log(chalk.gray(`  Pages crawled: ${pages.length}`));
     console.log(chalk.gray(`  Screenshots saved: ${config.output}/screenshots\n`));
 
-    // Save page data
+    // Generate document
+    spinner.start('Generating documentation...');
+
+    const docResult = agent.generateDocument(pages);
+    if (!docResult.success || !docResult.data) {
+      throw new Error(docResult.error || 'Document generation failed');
+    }
+
+    const document = docResult.data;
+    spinner.succeed(chalk.green('Document structure generated!'));
+
+    // Format document
+    spinner.start('Formatting document...');
+
+    const formatter = new MarkdownFormatter();
+    const markdownContent = formatter.format(document, {
+      includeToc: true,
+      includeScreenshots: true,
+      includeElements: true,
+    });
+
+    spinner.succeed(chalk.green('Document formatted!'));
+
+    // Save files
+    spinner.start('Saving files...');
+
     const outputDir = config.output ?? './output';
-    await fs.mkdir(outputDir, { recursive: true });
-
     const dataPath = path.join(outputDir, 'pages.json');
-    await fs.writeFile(dataPath, JSON.stringify(pages, null, 2));
+    const docPath = path.join(outputDir, 'documentation.md');
 
-    console.log(chalk.green(`✅ Page data saved: ${dataPath}\n`));
+    await saveJsonFile(dataPath, pages);
+    await saveTextFile(docPath, markdownContent);
+
+    spinner.succeed(chalk.green('Files saved!'));
+
+    // Display results
+    console.log(chalk.cyan(`\n✅ Documentation Generated:\n`));
+    console.log(chalk.green(`  📄 Markdown: ${docPath}`));
+    console.log(chalk.gray(`  📊 Data: ${dataPath}`));
+    console.log(chalk.gray(`  📸 Screenshots: ${config.output}/screenshots\n`));
 
     // Display sample pages
     console.log(chalk.cyan('📄 Sample pages:'));

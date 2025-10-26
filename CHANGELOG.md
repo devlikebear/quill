@@ -7,6 +7,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2024-10-26
+
+### Added
+- **Document Generator Agent**: Converts page data into structured documents
+  - Automatic document metadata generation
+  - Table of contents (TOC) builder
+  - Section builder from page information
+  - Support for descriptions and UI elements
+  - Anchor link generation for navigation
+- **Markdown Formatter**: Converts documents to Markdown format
+  - Document title and metadata formatting
+  - Table of contents with nested items
+  - Section formatting with headers and anchors
+  - Screenshot image links (relative paths)
+  - UI element lists with descriptions
+  - Markdown special character escaping
+- **Base Formatter Interface**: Abstract formatter for future format support
+  - Common utility methods (escapeText, generateAnchor, formatDate)
+  - Extensible design for additional formats (DOCX, HTML, PDF)
+- **File Utilities**: Helper functions for file operations
+  - Directory creation with recursive support
+  - Text and JSON file saving
+  - File existence checking
+  - Filename sanitization and generation
+  - Relative path conversion
+- **Type Definitions**:
+  - Document, Section, TOC, TOCItem interfaces
+  - DocumentMetadata and FormatterOptions
+  - Comprehensive type support for document generation
+
+### Changed
+- Main agent now includes document generation workflow
+- CLI `generate` command produces Markdown documentation files
+- Enhanced output with document structure and formatting
+- Better separation of concerns (crawling → generation → formatting)
+
+### Technical Details
+- Implemented document structure with metadata and sections
+- Added Markdown formatter with proper escaping and formatting
+- File utilities for safe file operations
+- Document generator creates structured output from raw page data
+- Output includes both raw data (JSON) and formatted documentation (Markdown)
+
 ## [0.2.0] - 2024-10-26
 
 ### Added
@@ -67,6 +110,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Playwright for browser automation
 - Claude Agent SDK integration (planned)
 
-[Unreleased]: https://github.com/devlikebear/quill/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/devlikebear/quill/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/devlikebear/quill/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/devlikebear/quill/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/devlikebear/quill/releases/tag/v0.1.0
