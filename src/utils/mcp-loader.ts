@@ -22,8 +22,7 @@ export interface McpServers {
  */
 export function loadMcpServers(): McpServers {
   try {
-    const anthropicHome =
-      process.env.ANTHROPIC_HOME || path.join(os.homedir(), '.claude');
+    const anthropicHome = process.env.ANTHROPIC_HOME || path.join(os.homedir(), '.claude');
     const mcpConfigPath = path.join(anthropicHome, 'mcp-servers.json');
 
     if (!fs.existsSync(mcpConfigPath)) {
@@ -84,7 +83,6 @@ export function loadMcpServers(): McpServers {
  * Get MCP config path for debugging
  */
 export function getMcpConfigPath(): string {
-  const anthropicHome =
-    process.env.ANTHROPIC_HOME || path.join(os.homedir(), '.claude');
+  const anthropicHome = process.env.ANTHROPIC_HOME || path.join(os.homedir(), '.claude');
   return path.join(anthropicHome, 'mcp-servers.json');
 }

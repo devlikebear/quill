@@ -96,27 +96,34 @@ export class FeatureExtractor {
   private inferFeatureName(element: UIElement): string {
     // Try to infer from text content
     const text = element.text || '';
+    const lowerText = text.toLowerCase();
 
     // Common feature patterns
-    if (text.toLowerCase().includes('login') || text.toLowerCase().includes('sign in')) {
+    if (
+      lowerText.includes('login') ||
+      lowerText.includes('sign in') ||
+      lowerText.includes('sign up') ||
+      lowerText.includes('email') ||
+      lowerText.includes('password')
+    ) {
       return 'Authentication';
     }
-    if (text.toLowerCase().includes('search')) {
+    if (lowerText.includes('search')) {
       return 'Search';
     }
-    if (text.toLowerCase().includes('filter')) {
+    if (lowerText.includes('filter')) {
       return 'Filtering';
     }
-    if (text.toLowerCase().includes('submit') || text.toLowerCase().includes('save')) {
+    if (lowerText.includes('submit') || lowerText.includes('save')) {
       return 'Data Submission';
     }
-    if (text.toLowerCase().includes('edit') || text.toLowerCase().includes('update')) {
+    if (lowerText.includes('edit') || lowerText.includes('update')) {
       return 'Data Modification';
     }
-    if (text.toLowerCase().includes('delete') || text.toLowerCase().includes('remove')) {
+    if (lowerText.includes('delete') || lowerText.includes('remove')) {
       return 'Data Deletion';
     }
-    if (text.toLowerCase().includes('navigation') || text.toLowerCase().includes('menu')) {
+    if (lowerText.includes('navigation') || lowerText.includes('menu')) {
       return 'Navigation';
     }
 

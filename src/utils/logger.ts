@@ -27,7 +27,8 @@ export class Logger {
 
   private formatMessage(level: LogLevel, message: string, ...args: unknown[]): string {
     const timestamp = new Date().toISOString();
-    const formattedArgs = args.length > 0 ? ' ' + args.map((arg) => JSON.stringify(arg)).join(' ') : '';
+    const formattedArgs =
+      args.length > 0 ? ' ' + args.map((arg) => JSON.stringify(arg)).join(' ') : '';
 
     return `[${timestamp}] [${level.toUpperCase()}] ${message}${formattedArgs}`;
   }

@@ -28,8 +28,7 @@ export function loadAnthropicCredentials(): AnthropicCredentials {
   }
 
   // 2. Check Claude Code credentials
-  const anthropicHome =
-    process.env.ANTHROPIC_HOME || path.join(os.homedir(), '.claude');
+  const anthropicHome = process.env.ANTHROPIC_HOME || path.join(os.homedir(), '.claude');
   const credentialsPath = path.join(anthropicHome, 'credentials.json');
 
   if (fs.existsSync(credentialsPath)) {
@@ -77,7 +76,6 @@ export function validateCredentials(credentials: AnthropicCredentials): boolean 
  * Get credentials path for debugging
  */
 export function getCredentialsPath(): string {
-  const anthropicHome =
-    process.env.ANTHROPIC_HOME || path.join(os.homedir(), '.claude');
+  const anthropicHome = process.env.ANTHROPIC_HOME || path.join(os.homedir(), '.claude');
   return path.join(anthropicHome, 'credentials.json');
 }
