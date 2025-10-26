@@ -138,11 +138,13 @@ export class SessionManager {
   /**
    * Get session info (cookie count, expiry, etc.)
    */
-  async getInfo(sessionPath: string): Promise<AgentResult<{
-    cookieCount: number;
-    validCookies: number;
-    oldestExpiry?: Date;
-  }>> {
+  async getInfo(sessionPath: string): Promise<
+    AgentResult<{
+      cookieCount: number;
+      validCookies: number;
+      oldestExpiry?: Date;
+    }>
+  > {
     const loadResult = await this.load(sessionPath);
 
     if (!loadResult.success || !loadResult.data) {
@@ -170,7 +172,8 @@ export class SessionManager {
       data: {
         cookieCount: state.cookies.length,
         validCookies: validCookies.length,
-        oldestExpiry: expiryTimes.length > 0 && expiryTimes[0] ? new Date(expiryTimes[0] * 1000) : undefined,
+        oldestExpiry:
+          expiryTimes.length > 0 && expiryTimes[0] ? new Date(expiryTimes[0] * 1000) : undefined,
       },
     };
   }

@@ -28,10 +28,7 @@ export class DocxFormatter extends BaseFormatter {
   /**
    * Format document to DOCX
    */
-  async format(
-    document: Document,
-    options: FormatterOptions = {}
-  ): Promise<Buffer> {
+  async format(document: Document, options: FormatterOptions = {}): Promise<Buffer> {
     const docxDocument = await this.createDocument(document, options);
     const buffer = await this.generateBuffer(docxDocument);
     return buffer;
@@ -209,10 +206,7 @@ export class DocxFormatter extends BaseFormatter {
   /**
    * Create section
    */
-  private async createSection(
-    section: Section,
-    options: FormatterOptions
-  ): Promise<Paragraph[]> {
+  private async createSection(section: Section, options: FormatterOptions): Promise<Paragraph[]> {
     const paragraphs: Paragraph[] = [];
 
     // Section title
@@ -270,11 +264,7 @@ export class DocxFormatter extends BaseFormatter {
     }
 
     // UI Elements
-    if (
-      options.includeElements !== false &&
-      section.elements &&
-      section.elements.length > 0
-    ) {
+    if (options.includeElements !== false && section.elements && section.elements.length > 0) {
       paragraphs.push(
         new Paragraph({
           text: 'UI Elements',

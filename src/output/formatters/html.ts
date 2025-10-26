@@ -413,11 +413,7 @@ ${head}
     }
 
     // UI Elements
-    if (
-      options.includeElements !== false &&
-      section.elements &&
-      section.elements.length > 0
-    ) {
+    if (options.includeElements !== false && section.elements && section.elements.length > 0) {
       html += `
       <div class="elements-section">
         <h3>UI Elements</h3>

@@ -100,7 +100,7 @@ export class DocumentGenerator {
   private buildTOC(pages: PageInfo[]): TOC {
     const items: TOCItem[] = pages.map((page, index) => ({
       title: page.title || `Page ${index + 1}`,
-      anchor: `section-${index + 1}`,  // Match section.id for unique anchors
+      anchor: `section-${index + 1}`, // Match section.id for unique anchors
       depth: 1,
     }));
 

@@ -54,12 +54,12 @@ export class MarkdownFormatter extends BaseFormatter {
    */
   protected escapeMarkdown(text: string): string {
     return text
-      .replace(/\\/g, '\\\\')  // Backslash must be escaped
-      .replace(/\*/g, '\\*')   // Asterisk for italic/bold
-      .replace(/\_/g, '\\_')   // Underscore for italic/bold
-      .replace(/\[/g, '\\[')   // Square brackets for links
+      .replace(/\\/g, '\\\\') // Backslash must be escaped
+      .replace(/\*/g, '\\*') // Asterisk for italic/bold
+      .replace(/\_/g, '\\_') // Underscore for italic/bold
+      .replace(/\[/g, '\\[') // Square brackets for links
       .replace(/\]/g, '\\]')
-      .replace(/`/g, '\\`');   // Backticks for code
+      .replace(/`/g, '\\`'); // Backticks for code
   }
 
   /**

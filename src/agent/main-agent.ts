@@ -33,7 +33,8 @@ export class MainAgent {
 
       // 3. Execute query (SDK handles credentials automatically)
       logger.info('Executing Agent query...');
-      const modelName = this.config.agentModel || process.env.CLAUDE_MODEL || 'claude-opus-4-1-20250805';
+      const modelName =
+        this.config.agentModel || process.env.CLAUDE_MODEL || 'claude-opus-4-1-20250805';
       logger.info(`Model: ${modelName}`);
 
       const messageStream = query({
@@ -53,7 +54,7 @@ export class MainAgent {
       // 5. Process streaming response
       let finalResult = '';
       const pages: PageInfo[] = [];
-      let toolUsageCount = 0;
+      const toolUsageCount = 0;
 
       for await (const message of messageStream) {
         // Log all message types for debugging
@@ -61,7 +62,7 @@ export class MainAgent {
 
         // Handle result
         if (message.type === 'result' && 'result' in message) {
-          finalResult = message.result as string;
+          finalResult = message.result;
           logger.info('Received final result from agent');
           console.log(`[DEBUG] Final result (full): ${finalResult}`);
         }
@@ -154,35 +155,62 @@ export class MainAgent {
 
     const languageInfo = this.getLanguageInstruction();
 
-    return `You are a web documentation expert. Crawl websites and extract page information.
+    return `You are a user-focused documentation expert. Analyze websites from an END-USER perspective, not a technical perspective.
 
 ${toolsInfo}
 
 ${languageInfo}
+
+ANALYSIS APPROACH:
+- Think like a manual writer for end-users, not developers
+- Group UI elements by FEATURES (what users want to accomplish)
+- Describe in natural language how users interact with the page
+- Focus on user scenarios and workflows
 
 OUTPUT: Return ONLY a valid JSON array with this structure:
 [
   {
     "url": "https://example.com/page",
     "title": "Page Title",
-    "description": "Brief description of what this page does",
+    "description": "What users can accomplish on this page (user-focused, not technical)",
     "screenshot": "screenshots/page.png",
     "links": ["url1", "url2"],
     "elements": [
       {
-        "type": "button|input|link",
-        "text": "Element label/text",
-        "description": "What this element does (be specific)"
+        "type": "button|input|form|link|section|heading|other",
+        "text": "Element label/text (visible to users)",
+        "description": "What happens when user interacts with this (natural language)",
+        "ariaLabel": "Accessibility label if available"
       }
     ]
   }
 ]
 
-RULES:
-- Return ONLY valid JSON (no markdown, no explanations)
-- Element descriptions should explain PURPOSE not just type
-- Capture main interactive elements only
-- Keep it simple and focused`;
+CRITICAL RULES FOR USER-FRIENDLY DESCRIPTIONS:
+✅ GOOD: "Click 'Sign In' to access your account"
+❌ BAD: "button element for authentication"
+
+✅ GOOD: "Enter your email address in this field"
+❌ BAD: "input field of type email"
+
+✅ GOOD: "Search for products by typing keywords here"
+❌ BAD: "text input for search functionality"
+
+✅ GOOD: "Navigate to the dashboard by clicking this link"
+❌ BAD: "link element to /dashboard"
+
+ELEMENT GROUPING HINTS:
+- Login/Signup buttons → Authentication feature
+- Search boxes → Search feature
+- Navigation menus → Navigation feature
+- Submit/Save buttons → Data submission feature
+- Edit/Update buttons → Data modification feature
+
+FORMAT REQUIREMENTS:
+- Return ONLY valid JSON (no markdown, no code blocks, no explanations)
+- Descriptions must be user-friendly and scenario-based
+- Capture main interactive elements that users need for tasks
+- Use natural language that end-users would understand`;
   }
 
   /**
@@ -191,18 +219,27 @@ RULES:
   private buildTaskPrompt(): string {
     const depth = this.config.depth ?? 2;
 
-    return `Crawl this website and extract page information:
+    return `Analyze this website and create user-friendly documentation:
 
 URL: ${this.config.url}
 Max Depth: ${depth} levels
 
-STEPS:
+ANALYSIS STEPS (think like writing a user manual):
 1. Use browser_navigate to visit ${this.config.url}
-2. Use browser_snapshot to get page content
-3. Use browser_take_screenshot to capture page image
-4. Extract page title, description, links, and key UI elements
-5. For depth ${depth}, follow ${depth > 1 ? 'up to ' + depth + ' link(s)' : '1 link'} and repeat steps 1-4
-6. Return JSON array of ALL pages visited
+2. Use browser_snapshot to get page content and structure
+3. Use browser_take_screenshot to capture the page appearance
+4. Analyze from USER perspective:
+   - What can users DO on this page?
+   - What FEATURES are available?
+   - How do users INTERACT with elements?
+5. Extract user-focused information:
+   - Page title and purpose (what users accomplish here)
+   - Interactive elements with natural descriptions
+   - Links to other pages
+6. For depth ${depth}, follow ${depth > 1 ? 'up to ' + depth + ' link(s)' : '1 link'} and repeat steps 1-5
+7. Return JSON array of ALL pages visited
+
+REMEMBER: Write descriptions as if explaining to a non-technical user reading a manual.
 
 Start now. Return ONLY the JSON array.`;
   }

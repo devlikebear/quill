@@ -7,6 +7,140 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2025-01-26
+
+### 🎨 Feature Release: Template System & Multi-file Documentation
+
+v1.1.0은 템플릿 시스템과 멀티파일 문서 생성 기능을 추가하여 더 유연하고 사용자 친화적인 문서를 생성할 수 있습니다.
+
+### ✨ Added
+
+- **템플릿 시스템** (`src/templates/`):
+  - YAML 기반 템플릿 정의 시스템
+  - Handlebars 템플릿 엔진 통합
+  - 템플릿 로더 with 캐싱 및 검증
+  - 3가지 빌트인 템플릿:
+    - `user-guide`: 일반 사용자용 (functional style)
+    - `technical`: 개발자용 (technical style)
+    - `quick-start`: 빠른 시작용 (scenario-based style)
+  - 커스텀 템플릿 지원 (`--custom-template-dir`)
+
+- **멀티파일 생성** (`src/generators/`):
+  - `MultiFileGenerator`: 구조화된 멀티파일 문서 생성
+  - `SitemapGenerator`: 계층적 사이트맵 생성
+  - `NavigationGenerator`: GNB/LNB/Breadcrumbs 생성
+  - `FeatureExtractor`: UI 요소를 기능별로 그룹화
+  - 출력 구조:
+    - `docs/index.md` - 메인 랜딩 페이지
+    - `docs/sitemap.md` - 전체 사이트맵
+    - `docs/navigation/` - GNB/LNB 파일
+    - `docs/pages/[id]/` - 페이지별 overview/instructions
+    - `docs/features/` - 기능별 가이드
+
+- **사용자 친화적 설명**:
+  - 3가지 UI 요소 설명 스타일:
+    - Technical: `button element (aria-label: submit)`
+    - Functional: `Click "Submit" to save your changes` (기본)
+    - Scenario-based: `When you want to save, click "Submit"`
+  - 기능별 자동 그룹화 (Authentication, Search, Navigation 등)
+  - AI 프롬프트 개선으로 사용자 관점 매뉴얼 생성
+
+- **부분 업데이트** (`src/cli/commands/update.ts`):
+  - `quill update` 명령어 추가
+  - 특정 페이지만 선택적 업데이트
+  - 기존 문서에서 페이지 정보 파싱
+  - Base URL 자동 감지
+  - 업데이트된 페이지와 기존 페이지 병합
+
+- **설정 파일 지원**:
+  - `.quillrc.json` 설정 파일 로딩
+  - CLI 옵션 우선순위: CLI args > config file > defaults
+  - JSON 형식으로 모든 옵션 지정 가능
+
+- **Handlebars 헬퍼**:
+  - `formatDate`: 날짜 포맷팅
+  - `link`: 마크다운 링크 생성
+  - `heading`: 마크다운 제목 생성
+  - `code`: 코드 블록/인라인 코드 생성
+  - `listItem`: 리스트 아이템 생성
+  - 비교/유틸리티 헬퍼 (`eq`, `length`, `uppercase`, etc.)
+
+### 🔄 Changed
+
+- **Main Agent 프롬프트 개선**:
+  - "web documentation expert" → "user-focused documentation expert"
+  - 사용자 관점 설명 강조
+  - 좋은/나쁜 예시 추가
+  - 기능 그룹화 힌트 제공
+
+- **CLI 명령어 개선**:
+  - `generate` 명령어에 멀티파일 옵션 추가
+  - `--multi-file`: 멀티파일 생성 활성화
+  - `--template <name>`: 템플릿 선택
+  - `--custom-template-dir <path>`: 커스텀 템플릿 디렉토리
+  - `--config <path>`: 설정 파일 경로
+
+- **Type 시스템 확장**:
+  - `Feature`, `UIElementInfo` 인터페이스 추가
+  - `SitemapStructure`, `NavigationStructure` 타입 추가
+  - `UIElement`에 `ariaLabel` 필드 추가
+  - 템플릿 관련 타입 정의 완비
+
+### 📦 Dependencies
+
+- **Added**:
+  - `handlebars@^4.7.8`: 템플릿 렌더링
+  - `js-yaml@^4.1.0`: YAML 파싱
+
+### 📚 Documentation
+
+- README.md 업데이트:
+  - 템플릿 시스템 사용법 추가
+  - 멀티파일 생성 예시 추가
+  - update 명령어 문서화
+  - CLI 옵션 업데이트
+- TEMPLATES.md 추가:
+  - 빌트인 템플릿 설명
+  - 커스텀 템플릿 작성 가이드
+  - Handlebars 헬퍼 레퍼런스
+  - 템플릿 예제
+
+### 🧪 Testing
+
+- Template Loader 테스트 (10 tests)
+- Feature Extractor 테스트 (9 tests)
+- Multi-file Generation 통합 테스트 (9 tests)
+- 총 28개 테스트 추가
+
+### 📝 Migration Guide (v1.0.0 → v1.1.0)
+
+**기존 방식 (단일 파일) 유지**:
+
+```bash
+quill generate --url https://example.com
+# 기존처럼 단일 documentation.md 생성
+```
+
+**새로운 멀티파일 방식**:
+
+```bash
+quill generate --url https://example.com --multi-file --template user-guide
+# 구조화된 멀티파일 문서 생성
+```
+
+**설정 파일 사용**:
+
+```bash
+# .quillrc.json
+{
+  "url": "https://example.com",
+  "multiFile": true,
+  "template": "user-guide"
+}
+
+quill generate --config .quillrc.json
+```
+
 ## [1.0.0] - 2025-01-26
 
 ### 🎉 Major Release: Claude Agent SDK Migration
@@ -317,7 +451,8 @@ npm run build
 - Playwright for browser automation
 - Claude Agent SDK integration (planned)
 
-[Unreleased]: https://github.com/devlikebear/quill/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/devlikebear/quill/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/devlikebear/quill/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/devlikebear/quill/compare/v0.5.0...v1.0.0
 [0.5.0]: https://github.com/devlikebear/quill/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/devlikebear/quill/compare/v0.3.0...v0.4.0

@@ -1,0 +1,68 @@
+# Technical Documentation Template
+# For developers with detailed technical information
+
+name: technical
+version: 1.0.0
+description: Technical documentation template for developers
+author: Quill
+
+structure:
+  directories:
+    root: docs
+    navigation: docs/navigation
+    pages: docs/pages
+    features: docs/api
+    assets: docs/assets
+
+  files:
+    index: README.md
+    sitemap: ARCHITECTURE.md
+    gnb: navigation/api-reference.md
+    lnb: navigation/endpoints.md
+    pageOverview: pages/{page-id}/README.md
+    pageInstructions: pages/{page-id}/implementation.md
+    feature: api/{feature-id}.md
+
+sections:
+  - name: index
+    title: Technical Overview
+    description: Architecture and technical introduction
+    enabled: true
+
+  - name: sitemap
+    title: System Architecture
+    description: Complete system structure and dependencies
+    enabled: true
+
+  - name: navigation
+    title: API Reference
+    description: API endpoints and integration guides
+    enabled: true
+    subsections:
+      - api-reference
+      - endpoints
+
+  - name: pages
+    title: Component Documentation
+    description: Detailed component and page documentation
+    enabled: true
+    subsections:
+      - readme
+      - implementation
+
+  - name: features
+    title: API Documentation
+    description: Feature-level API documentation
+    enabled: true
+
+format:
+  uiElementsStyle: technical
+  includeScreenshots: true
+  includeBreadcrumbs: true
+  includePageToc: true
+
+metadata:
+  audience: developers
+  level: advanced
+  language: en
+  includeCodeExamples: true

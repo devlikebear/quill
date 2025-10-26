@@ -47,7 +47,8 @@ export class CredentialProvider {
       // No credentials found
       return {
         success: false,
-        error: 'No credentials provided. Use --auth-interactive or set QUILL_USERNAME/QUILL_PASSWORD',
+        error:
+          'No credentials provided. Use --auth-interactive or set QUILL_USERNAME/QUILL_PASSWORD',
       };
     } catch (error) {
       logger.error('Failed to get credentials', error);

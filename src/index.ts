@@ -5,3 +5,7 @@
 
 export * from './types/index.js';
 export { MainAgent } from './agent/main-agent.js';
+export * from './generators/index.js';
+export * from './templates/types.js';
+export { TemplateLoader } from './templates/loader.js';
+export { TemplateEngine, renderTemplate } from './templates/engine.js';

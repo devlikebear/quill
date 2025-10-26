@@ -1,0 +1,67 @@
+# User Guide Template
+# For end-user documentation with feature-focused explanations
+
+name: user-guide
+version: 1.0.0
+description: End-user documentation template with feature-based organization
+author: Quill
+
+structure:
+  directories:
+    root: docs
+    navigation: docs/navigation
+    pages: docs/pages
+    features: docs/features
+    assets: docs/assets
+
+  files:
+    index: index.md
+    sitemap: sitemap.md
+    gnb: navigation/global-navigation.md
+    lnb: navigation/local-navigation.md
+    pageOverview: pages/{page-id}/overview.md
+    pageInstructions: pages/{page-id}/instructions.md
+    feature: features/{feature-id}.md
+
+sections:
+  - name: index
+    title: Welcome
+    description: Landing page with overview
+    enabled: true
+
+  - name: sitemap
+    title: Site Map
+    description: Complete site structure
+    enabled: true
+
+  - name: navigation
+    title: Navigation
+    description: Global and local navigation guides
+    enabled: true
+    subsections:
+      - gnb
+      - lnb
+
+  - name: pages
+    title: Page Guides
+    description: Detailed page-by-page instructions
+    enabled: true
+    subsections:
+      - overview
+      - instructions
+
+  - name: features
+    title: Features
+    description: Feature-focused explanations
+    enabled: true
+
+format:
+  uiElementsStyle: functional
+  includeScreenshots: true
+  includeBreadcrumbs: true
+  includePageToc: true
+
+metadata:
+  audience: end-users
+  level: beginner
+  language: en

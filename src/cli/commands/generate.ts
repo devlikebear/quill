@@ -4,11 +4,13 @@
 
 import chalk from 'chalk';
 import ora from 'ora';
+import { existsSync, readFileSync } from 'fs';
 import type { QuillConfig, OutputFormat } from '../../types/index.js';
 import { MainAgent } from '../../agent/main-agent.js';
 import { DocumentGenerator } from '../../agent/subagents/document-generator.js';
 import { MarkdownFormatter } from '../../output/formatters/markdown.js';
 import { saveTextFile, saveJsonFile } from '../../utils/file-utils.js';
+import { generateMultiFile } from '../../generators/multi-file-generator.js';
 import path from 'path';
 
 interface GenerateOptions {
@@ -18,6 +20,9 @@ interface GenerateOptions {
   output?: string;
   language?: string;
   config?: string;
+  template?: string;
+  multiFile?: boolean;
+  customTemplateDir?: string;
   // Authentication options
   authType?: 'session' | 'basic' | 'oauth';
   loginUrl?: string;
@@ -34,19 +39,34 @@ export async function generateCommand(options: GenerateOptions): Promise<void> {
   const spinner = ora('Initializing...').start();
 
   try {
+    // Load config file if specified
+    let fileConfig = {};
+    if (options.config) {
+      if (existsSync(options.config)) {
+        const configContent = readFileSync(options.config, 'utf-8');
+        fileConfig = JSON.parse(configContent);
+        spinner.text = `Configuration loaded from ${options.config}`;
+      } else {
+        spinner.warn(chalk.yellow(`Config file not found: ${options.config}`));
+      }
+    }
+
+    // Merge options: CLI args > config file > defaults
+    const mergedOptions = { ...fileConfig, ...options };
+
     // Validate required options
-    if (!options.url) {
-      spinner.fail(chalk.red('URL is required. Use --url <url>'));
+    if (!mergedOptions.url) {
+      spinner.fail(chalk.red('URL is required. Use --url <url> or provide it in config file'));
       return;
     }
 
     // Build configuration
     const config: QuillConfig = {
-      url: options.url,
-      depth: options.depth ? parseInt(options.depth, 10) : 2,
-      format: options.format ?? 'markdown',
-      output: options.output ?? './output',
-      language: options.language ?? 'en',
+      url: mergedOptions.url,
+      depth: mergedOptions.depth ? parseInt(mergedOptions.depth, 10) : 2,
+      format: mergedOptions.format ?? 'markdown',
+      output: mergedOptions.output ?? './manual',
+      language: mergedOptions.language ?? 'en',
     };
 
     // Add authentication configuration if provided
@@ -109,7 +129,44 @@ export async function generateCommand(options: GenerateOptions): Promise<void> {
     console.log(chalk.gray(`  Pages crawled: ${pages.length}`));
     console.log(chalk.gray(`  Screenshots saved: ${config.output}/screenshots\n`));
 
-    // Generate document
+    // Check if multi-file mode
+    if (mergedOptions.multiFile) {
+      // Multi-file documentation generation
+      spinner.start('Generating multi-file documentation...');
+
+      const baseUrl = new URL(config.url);
+      const generationResult = await generateMultiFile(pages, {
+        template: mergedOptions.template || 'user-guide',
+        outputDir: config.output!,
+        baseUrl: `${baseUrl.protocol}//${baseUrl.host}`,
+        customTemplateDir: mergedOptions.customTemplateDir,
+      });
+
+      spinner.succeed(chalk.green('Multi-file documentation generated!'));
+
+      // Display results
+      console.log(chalk.cyan(`\n✅ Multi-File Documentation Generated:\n`));
+      console.log(chalk.green(`  📁 Output Directory: ${generationResult.outputDir}`));
+      console.log(chalk.gray(`  📄 Files Generated: ${generationResult.filesGenerated}`));
+      console.log(chalk.gray(`  📋 Template: ${generationResult.templateName}`));
+      console.log(chalk.gray(`  📊 Pages: ${generationResult.metadata.pageCount}`));
+      console.log(chalk.gray(`  🎯 Features: ${generationResult.metadata.featureCount}\n`));
+
+      // Display sample files
+      console.log(chalk.cyan('📄 Generated files (sample):'));
+      generationResult.files.slice(0, 10).forEach((file, index) => {
+        const relativePath = path.relative(generationResult.outputDir, file);
+        console.log(chalk.gray(`  ${index + 1}. ${relativePath}`));
+      });
+
+      if (generationResult.files.length > 10) {
+        console.log(chalk.gray(`  ... and ${generationResult.files.length - 10} more files\n`));
+      }
+
+      return;
+    }
+
+    // Single-file documentation generation (existing logic)
     spinner.start('Generating documentation...');
 
     const documentGenerator = new DocumentGenerator({
