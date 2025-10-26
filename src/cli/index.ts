@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 /**
  * Quill CLI - Command Line Interface
  */
@@ -14,7 +12,7 @@ const program = new Command();
 program
   .name('quill')
   .description('AI-powered documentation generator for web applications')
-  .version('0.1.0');
+  .version('1.0.0');
 
 // Init command
 program
