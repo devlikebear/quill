@@ -1,0 +1,66 @@
+# Quick Start Template
+# For getting started guides with minimal documentation
+
+name: quick-start
+version: 1.0.0
+description: Quick start guide template for rapid onboarding
+author: Quill
+
+structure:
+  directories:
+    root: docs
+    navigation: docs
+    pages: docs/guides
+    features: docs/guides
+    assets: docs/screenshots
+
+  files:
+    index: QUICK_START.md
+    sitemap: TABLE_OF_CONTENTS.md
+    gnb: NAVIGATION.md
+    lnb: null
+    pageOverview: guides/{page-id}.md
+    pageInstructions: null
+    feature: guides/{feature-id}-guide.md
+
+sections:
+  - name: index
+    title: Quick Start
+    description: Get started in 5 minutes
+    enabled: true
+
+  - name: sitemap
+    title: Table of Contents
+    description: Quick navigation
+    enabled: true
+
+  - name: navigation
+    title: Navigation Guide
+    description: Simple navigation overview
+    enabled: true
+    subsections:
+      - gnb
+
+  - name: pages
+    title: Step-by-Step Guides
+    description: Concise page guides
+    enabled: true
+    subsections:
+      - overview
+
+  - name: features
+    title: Key Features
+    description: Essential features guide
+    enabled: true
+
+format:
+  uiElementsStyle: scenario-based
+  includeScreenshots: true
+  includeBreadcrumbs: false
+  includePageToc: false
+
+metadata:
+  audience: new-users
+  level: beginner
+  language: en
+  focusOnSpeed: true

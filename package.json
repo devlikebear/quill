@@ -50,9 +50,13 @@
     "commander": "^11.1.0",
     "docx": "^9.5.1",
     "dotenv": "^16.3.1",
+    "handlebars": "^4.7.8",
+    "js-yaml": "^4.1.0",
     "ora": "^7.0.1"
   },
   "devDependencies": {
+    "@types/handlebars": "^4.0.40",
+    "@types/js-yaml": "^4.0.9",
     "@types/node": "^20.10.0",
     "@typescript-eslint/eslint-plugin": "^6.13.0",
     "@typescript-eslint/parser": "^6.13.0",
